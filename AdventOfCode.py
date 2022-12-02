@@ -64,5 +64,5 @@ def solveDay2B():
 
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
-print("1A:", solveDay2A())
-print("1B:", solveDay2B())
+print("2A:", solveDay2A())
+print("2B:", solveDay2B())
