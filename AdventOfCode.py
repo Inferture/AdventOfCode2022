@@ -1,9 +1,13 @@
+#Utilities
+
 def getInput(day):
     f = open("./input_" + str(day) + ".txt")
     return f.read()
 
 def getInputSplit(day):
-    return getInput(day).split('\n')
+    return getInput(day).strip().split('\n')
+
+#Day 1
 
 def solveDay1A():
     lines = getInputSplit(1)
@@ -37,6 +41,7 @@ def solveDay1B():
             currentSum=0
     return sum(maxima)
 
+#Day 2
 
 def solveDay2A():
     lines = getInputSplit(2)
@@ -62,7 +67,33 @@ def solveDay2B():
             totalScore = totalScore + 3 * outcomePointsThird + ((advPoints + outcomePointsThird  + 1) % 3 + 1)
     return totalScore
 
+#Day 3
+
+def charValue(c):
+    return ord(c)-38 if ord(c)<91 else ord(c) - 96
+
+def solveDay3A():
+    lines = getInputSplit(3)
+    totalPriority=0
+    for line in lines:
+        line1 = line[:int(len(line)/2)]
+        line2 = line[int(len(line)/2):]
+        totalPriority = totalPriority + sum(dict.fromkeys([charValue(c) for c in line1 if c in line2]))
+    return totalPriority
+
+def solveDay3B():
+    lines = getInputSplit(3)
+    totalPriority=0
+    for i in range(int(len(lines)/3)):
+        line1 = lines[3*i]
+        line2 = lines[3*i+1]
+        line3 = lines[3*i+2]
+        totalPriority = totalPriority + sum(dict.fromkeys([charValue(c) for c in line1 if c in line2 and c in line3]))
+    return totalPriority
+
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
 print("2B:", solveDay2B())
+print("3A:", solveDay3A())
+print("3B:", solveDay3B())
