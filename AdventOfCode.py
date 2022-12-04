@@ -91,9 +91,39 @@ def solveDay3B():
         totalPriority = totalPriority + sum(dict.fromkeys([charValue(c) for c in line1 if c in line2 and c in line3]))
     return totalPriority
 
+
+#Day 4
+
+
+def solveDay4A():
+    lines = getInputSplit(4)
+    total=0
+    for line in lines:
+        line1 = line.split(',')[0]
+        line2 = line.split(',')[1]
+        if ((int(line1.split('-')[0]) <= int(line2.split('-')[0]) and int(line1.split('-')[1]) >= int(line2.split('-')[1]))
+        or (int(line1.split('-')[0]) >= int(line2.split('-')[0]) and int(line1.split('-')[1]) <= int(line2.split('-')[1]))):  
+            total = total + 1
+    return total
+
+def solveDay4B():
+    lines = getInputSplit(4)
+    total=0
+    for line in lines:
+        line1 = line.split(',')[0]
+        line2 = line.split(',')[1]
+        if ((int(line1.split('-')[0]) <= int(line2.split('-')[0]) and int(line1.split('-')[1]) >= int(line2.split('-')[0]))
+        or (int(line1.split('-')[0]) >= int(line2.split('-')[0]) and int(line1.split('-')[0]) <= int(line2.split('-')[1]))):  
+            total = total + 1
+    return total
+
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
 print("2B:", solveDay2B())
 print("3A:", solveDay3A())
 print("3B:", solveDay3B())
+print("4A:", solveDay4A())
+print("4B:", solveDay4B())
+
+
