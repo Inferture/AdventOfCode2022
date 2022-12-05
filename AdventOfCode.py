@@ -7,6 +7,7 @@ def getInput(day):
 def getInputSplit(day):
     return getInput(day).strip().split('\n')
 
+
 #Day 1
 
 def solveDay1A():
@@ -41,36 +42,36 @@ def solveDay1B():
             currentSum=0
     return sum(maxima)
 
+
 #Day 2
 
 def solveDay2A():
     lines = getInputSplit(2)
     totalScore=0
     for line in lines:
-        if len(line.split(' '))>1:
-            advPlay = line.split(' ')[0]
-            yourPlay = line.split(' ')[1]
-            advPoints = 1 if advPlay=="A" else (2 if advPlay == "B" else 3)
-            yourPoints = 1 if yourPlay=="X" else (2 if yourPlay == "Y" else 3)
-            totalScore = totalScore + yourPoints + 3 * ((yourPoints - advPoints  + 4) % 3)
+        advPlay = line.split(' ')[0]
+        yourPlay = line.split(' ')[1]
+        advPoints = 1 if advPlay=="A" else (2 if advPlay == "B" else 3)
+        yourPoints = 1 if yourPlay=="X" else (2 if yourPlay == "Y" else 3)
+        totalScore = totalScore + yourPoints + 3 * ((yourPoints - advPoints  + 4) % 3)
     return totalScore
 
 def solveDay2B():
     lines = getInputSplit(2)
     totalScore=0
     for line in lines:
-        if len(line.split(' '))>1:
-            advPlay = line.split(' ')[0]
-            yourPlay = line.split(' ')[1]
-            advPoints = 1 if advPlay=="A" else (2 if advPlay == "B" else 3)
-            outcomePointsThird = 0 if yourPlay=="X" else (1 if yourPlay == "Y" else 2)
-            totalScore = totalScore + 3 * outcomePointsThird + ((advPoints + outcomePointsThird  + 1) % 3 + 1)
+        advPlay = line.split(' ')[0]
+        yourPlay = line.split(' ')[1]
+        advPoints = 1 if advPlay=="A" else (2 if advPlay == "B" else 3)
+        outcomePointsThird = 0 if yourPlay=="X" else (1 if yourPlay == "Y" else 2)
+        totalScore = totalScore + 3 * outcomePointsThird + ((advPoints + outcomePointsThird  + 1) % 3 + 1)
     return totalScore
+
 
 #Day 3
 
 def charValue(c):
-    return ord(c)-38 if ord(c)<91 else ord(c) - 96
+    return ord(c) - 38 if ord(c) < 91 else ord(c) - 96
 
 def solveDay3A():
     lines = getInputSplit(3)
@@ -94,28 +95,83 @@ def solveDay3B():
 
 #Day 4
 
-
 def solveDay4A():
     lines = getInputSplit(4)
     total=0
     for line in lines:
-        line1 = line.split(',')[0]
-        line2 = line.split(',')[1]
-        if ((int(line1.split('-')[0]) <= int(line2.split('-')[0]) and int(line1.split('-')[1]) >= int(line2.split('-')[1]))
-        or (int(line1.split('-')[0]) >= int(line2.split('-')[0]) and int(line1.split('-')[1]) <= int(line2.split('-')[1]))):  
+        line1, line2 = line.split(',')[0], line.split(',')[1]
+        a,b,c,d=int(line1.split('-')[0]), int(line1.split('-')[1]), int(line2.split('-')[0]), int(line2.split('-')[1])
+        if (a >= c and b <= d) or (c >= a and d <= b):#a-b,c-d
             total = total + 1
     return total
+
 
 def solveDay4B():
     lines = getInputSplit(4)
     total=0
     for line in lines:
-        line1 = line.split(',')[0]
-        line2 = line.split(',')[1]
-        if ((int(line1.split('-')[0]) <= int(line2.split('-')[0]) and int(line1.split('-')[1]) >= int(line2.split('-')[0]))
-        or (int(line1.split('-')[0]) >= int(line2.split('-')[0]) and int(line1.split('-')[0]) <= int(line2.split('-')[1]))):  
+        line1, line2 = line.split(',')[0], line.split(',')[1]
+        a,b,c,d=int(line1.split('-')[0]), int(line1.split('-')[1]), int(line2.split('-')[0]), int(line2.split('-')[1])
+        if (a >= c and a <= d) or (c >= a and c <= b): #a-b,c-d
             total = total + 1
     return total
+
+
+#Day 5
+
+def solveDay5A():
+    lines = getInput(5).split('\n')
+    total=0
+    reverseCrates = []
+    for line in lines[:8]:
+        correctedLine = [line[4 * i + 1] for i in range(int(len(line)/4 + 1))]
+        reverseCrates.append(correctedLine)
+
+    crates = [[reverseCrates[i][j] for i in range(len(reverseCrates)) if len(reverseCrates[i][j].strip()) > 0] for j in range(len(reverseCrates[0]))]
+
+    for line in lines[10:]:
+        if(len(line.split(' '))>5):
+            num = int(line.split(' ')[1])
+            fro = int(line.split(' ')[3])
+            to = int(line.split(' ')[5])
+            for i in range(num):
+                if(len(crates[fro - 1])>0):
+                    crates[to - 1] = [crates[fro - 1][0]] + crates[to - 1]
+                    crates[fro - 1] = crates[fro - 1][1:]
+    s=""
+    for crate in crates:
+        if len(crate)>0:
+            s = s + crate[0]
+                      
+    return s
+
+def solveDay5B():
+    lines = getInput(5).split('\n')
+    total=0
+    reverseCrates = []
+    for line in lines[:8]:
+        correctedLine = [line[4 * i + 1] for i in range(int(len(line)/4 + 1))]
+        reverseCrates.append(correctedLine)   
+    crates = [[reverseCrates[i][j] for i in range(len(reverseCrates)) if len(reverseCrates[i][j].strip()) > 0] for j in range(len(reverseCrates[0]))]
+
+    for line in lines[10:]:
+        if(len(line.split(' '))>5):
+            num = int(line.split(' ')[1])
+            fro = int(line.split(' ')[3])
+            to = int(line.split(' ')[5])
+
+            num = min(num, len(crates[fro - 1]))
+            crates[to - 1] = crates[fro - 1][:num] + crates[to - 1]
+            crates[fro - 1] = crates[fro - 1][num:]
+    s=""     
+    for crate in crates:
+        if len(crate)>0:
+            s = s + crate[0]
+                      
+    return s
+
+
+
 
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
@@ -125,5 +181,6 @@ print("3A:", solveDay3A())
 print("3B:", solveDay3B())
 print("4A:", solveDay4A())
 print("4B:", solveDay4B())
-
+print("5A:", solveDay5A())
+print("5B:", solveDay5B())
 
