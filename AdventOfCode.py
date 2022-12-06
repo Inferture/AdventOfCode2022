@@ -1,5 +1,5 @@
 #Utilities
-
+from parse import *
 def getInput(day):
     f = open("./input_" + str(day) + ".txt")
     return f.read()
@@ -124,8 +124,7 @@ def solveDay5A():
     total=0
     reverseCrates = []
     for line in lines[:8]:
-        correctedLine = [line[4 * i + 1] for i in range(int(len(line)/4 + 1))]
-        reverseCrates.append(correctedLine)
+        reverseCrates.append(line[1::4])
 
     crates = [[reverseCrates[i][j] for i in range(len(reverseCrates)) if len(reverseCrates[i][j].strip()) > 0] for j in range(len(reverseCrates[0]))]
 
@@ -150,8 +149,7 @@ def solveDay5B():
     total=0
     reverseCrates = []
     for line in lines[:8]:
-        correctedLine = [line[4 * i + 1] for i in range(int(len(line)/4 + 1))]
-        reverseCrates.append(correctedLine)   
+        reverseCrates.append(line[1::4])   
     crates = [[reverseCrates[i][j] for i in range(len(reverseCrates)) if len(reverseCrates[i][j].strip()) > 0] for j in range(len(reverseCrates[0]))]
 
     for line in lines[10:]:
@@ -171,7 +169,19 @@ def solveDay5B():
     return s
 
 
+# Day 6
 
+def solveDay6A():
+    text = getInput(6)
+    for i in range(len(text)):
+        if len(text[i:i+4]) == len(dict.fromkeys([c for c in text[i:i+4]])):
+            return i+4
+
+def solveDay6B():
+    text = getInput(6)
+    for i in range(len(text)):
+        if len(text[i:i+14]) == len(dict.fromkeys([c for c in text[i:i+14]])):
+            return i+14
 
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
@@ -183,4 +193,6 @@ print("4A:", solveDay4A())
 print("4B:", solveDay4B())
 print("5A:", solveDay5A())
 print("5B:", solveDay5B())
+print("6A:", solveDay6A())
+print("6B:", solveDay6B())
 
