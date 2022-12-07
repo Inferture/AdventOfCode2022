@@ -173,16 +173,67 @@ def solveDay5B():
 
 def solveDay6A():
     text = getInput(6)
-    for i in range(len(text)):
-        if len(text[i:i+4]) == len(dict.fromkeys([c for c in text[i:i+4]])):
+    for i in range(len(text) - 4):
+        if len(dict.fromkeys([c for c in text[i:i+4]])) == 4:
             return i+4
 
 def solveDay6B():
     text = getInput(6)
-    for i in range(len(text)):
-        if len(text[i:i+14]) == len(dict.fromkeys([c for c in text[i:i+14]])):
+    for i in range(len(text) - 14):
+        if len(dict.fromkeys([c for c in text[i:i+14]])) == 14:
             return i+14
 
+# Day 7
+
+
+def getFolderSize(folder, children, parents, sizesNonRec, sizes):
+    if(folder in sizes):
+        return sizes[folder]
+    if not folder in sizesNonRec:
+        size=0
+    else:
+        size = sizesNonRec[folder]
+    if folder in children:
+        for child in children[folder]:
+            size = size + getFolderSize(child, children, parents, sizesNonRec, sizes)
+    sizes[folder]=size
+    return size
+
+
+def solveDay7():
+    lines=getInputSplit(7)
+    currentFolder= "/"
+    children={}
+    parents = {}
+    sizesNonRec={}
+    sizes={}
+    for line in lines:
+        if line.startswith("$ cd"):
+            dest = line.split(' ')[2]
+            if dest == '..' and currentFolder in parents:
+                currentFolder = parents[currentFolder]
+            elif dest=='/':
+                currentFolder='/'
+            else:
+                currentFolder = currentFolder + '/' +dest
+        if line.startswith('dir'):
+            newDir=currentFolder + '/' + line.split(' ')[1]
+            parents[newDir] = currentFolder
+            if currentFolder in children:
+                children[currentFolder].append(newDir)
+            else:
+                children[currentFolder]=[newDir]
+        elif not line.startswith('$'):
+            size = int(line.split(' ')[0])
+            if currentFolder in sizesNonRec:
+                sizesNonRec[currentFolder] = sizesNonRec[currentFolder] + size
+            else:
+                sizesNonRec[currentFolder] = size
+    getFolderSize('/', children, parents, sizesNonRec, sizes)
+    return sum([sizes[f] for f in sizes if sizes[f]<100000]), min([sizes[file] for file in sizes if sizes[file] > sizes['/'] - 40000000 ])
+            
+        
+        
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
@@ -195,4 +246,6 @@ print("5A:", solveDay5A())
 print("5B:", solveDay5B())
 print("6A:", solveDay6A())
 print("6B:", solveDay6B())
+print("7A:", solveDay7()[0])
+print("7B:", solveDay7()[1])
 
