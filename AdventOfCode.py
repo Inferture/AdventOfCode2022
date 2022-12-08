@@ -231,7 +231,64 @@ def solveDay7():
                 sizesNonRec[currentFolder] = size
     getFolderSize('/', children, parents, sizesNonRec, sizes)
     return sum([sizes[f] for f in sizes if sizes[f]<100000]), min([sizes[file] for file in sizes if sizes[file] > sizes['/'] - 40000000 ])
-            
+
+#Day 8
+
+def isTreeVisible(grid,i,j):
+    n = len(grid)
+    m = len(grid[0])
+    grid[i][j] = grid[i][j]-1
+    answer = grid[i][j] in (max([grid[i][k] for k in range(j+1)]),
+                            max([grid[i][k] for k in range(j,m)]),
+                            max([grid[k][j] for k in range(i+1)]),
+                            max([grid[k][j] for k in range(i,n)]))
+    grid[i][j] = grid[i][j] + 1
+    return answer
+
+def scenicScore(grid, i, j):
+     n = len(grid)
+     m = len(grid[0])
+     vn, ve, vw, vs = 0,0,0,0
+     for k in range(i-1, -1,-1):
+         if grid[k][j] < grid[i][j]:
+             vw = vw + 1
+         else:
+             vw = vw + 1
+             break
+     for k in range(i+1, n):
+         if grid[k][j] < grid[i][j]:
+             ve = ve+ 1
+         else:
+             ve = ve+ 1
+             break
+     for k in range(j-1, -1,-1):
+         if grid[i][k] < grid[i][j]:
+             vn = vn+ 1
+         else:
+             vn = vn+ 1
+             break
+     for k in range(j+1, m):
+         if grid[i][k] < grid[i][j]:
+             vs = vs+ 1
+         else:
+             vs = vs+ 1
+             break
+     
+      
+     return (vs*ve*vn*vw)
+
+def solveDay8A():
+    lines = getInputSplit(8)
+    grid =[[int(c) for c in line] for line in lines]
+    return len([(grid,i,j) for i in range(len(grid)) for j in range(len(grid[0])) if isTreeVisible(grid,i,j)])
+    
+    
+def solveDay8B():
+    lines = getInputSplit(8)
+    grid =[[int(c) for c in line] for line in lines]
+    return max([scenicScore(grid,i,j) for i in range(len(grid)) for j in range(len(grid[0]))])
+    
+
         
         
 print("1A:", solveDay1A())
@@ -248,4 +305,6 @@ print("6A:", solveDay6A())
 print("6B:", solveDay6B())
 print("7A:", solveDay7()[0])
 print("7B:", solveDay7()[1])
+print("8A:", solveDay8A())
+print("8B:", solveDay8B())
 
