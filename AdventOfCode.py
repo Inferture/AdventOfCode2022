@@ -1,5 +1,7 @@
 #Utilities
 from parse import *
+import numpy as np
+import os
 def getInput(day):
     f = open("./input_" + str(day) + ".txt")
     return f.read()
@@ -183,8 +185,8 @@ def solveDay6B():
         if len(dict.fromkeys([c for c in text[i:i+14]])) == 14:
             return i+14
 
-# Day 7
 
+# Day 7
 
 def getFolderSize(folder, children, parents, sizesNonRec, sizes):
     if(folder in sizes):
@@ -231,6 +233,7 @@ def solveDay7():
                 sizesNonRec[currentFolder] = size
     getFolderSize('/', children, parents, sizesNonRec, sizes)
     return sum([sizes[f] for f in sizes if sizes[f]<100000]), min([sizes[file] for file in sizes if sizes[file] > sizes['/'] - 40000000 ])
+
 
 #Day 8
 
@@ -287,7 +290,52 @@ def solveDay8B():
     lines = getInputSplit(8)
     grid =[[int(c) for c in line] for line in lines]
     return max([scenicScore(grid,i,j) for i in range(len(grid)) for j in range(len(grid[0]))])
-    
+
+
+#Day 9
+
+def sign(v):
+    return 1 if v > 0 else -1 if v < 0 else 0
+
+def solveDay9A():
+    lines = getInputSplit(9)
+    headPosition = np.array((0,0))
+    tailPosition = np.array((0,0))
+    visitedPositions=[(0,0)]
+    normDeltaPerDirection = {"U": np.array((0,1)), "D": np.array((0,-1)), "R": np.array((1,0)), "L": np.array((-1,0))}
+    for line in lines:
+        normDelta = normDeltaPerDirection[line.split(' ')[0]]
+        length = int(line.split(' ')[1])
+        for i in range(length):
+            lastHeadPosition = headPosition
+            headPosition = headPosition + normDelta
+            ropeDiff = headPosition - tailPosition
+            if abs(ropeDiff[0]) + abs(ropeDiff[1])>2 or abs(ropeDiff[0])>1 or abs(ropeDiff[1])>1:
+                tailPosition = lastHeadPosition
+                visitedPositions.append(tuple(tailPosition))
+    return len(dict.fromkeys(visitedPositions))    
+
+
+def solveDay9B():
+    lines = getInputSplit(9)
+    knotPositions = [np.array((0,0)) for i in range(10)]
+    visitedPositions=[(0,0)]
+    normDeltaPerDirection = {"U": np.array((0,1)), "D": np.array((0,-1)), "R": np.array((1,0)), "L": np.array((-1,0))}
+    for line in lines:
+        normDelta = normDeltaPerDirection[line.split(' ')[0]]
+        length = int(line.split(' ')[1])
+        for i in range(length):
+            lastKnotPosition = knotPositions[0]
+            knotPositions[0] = knotPositions[0] + normDelta
+            for i in range(len(knotPositions)-1):
+                ropeDiff = knotPositions[i] - knotPositions[i+1]
+                if abs(ropeDiff[0]) + abs(ropeDiff[1])>2 or abs(ropeDiff[0])>1 or abs(ropeDiff[1])>1:
+                    knotPositions[i+1] += np.array((sign(ropeDiff[0]), sign(ropeDiff[1])))
+                    if i == len(knotPositions) - 2:
+                        visitedPositions.append(tuple(knotPositions[-1]))
+                else:
+                    break
+    return len(dict.fromkeys(visitedPositions))
 
         
         
@@ -307,4 +355,6 @@ print("7A:", solveDay7()[0])
 print("7B:", solveDay7()[1])
 print("8A:", solveDay8A())
 print("8B:", solveDay8B())
+print("9A:", solveDay9A())
+print("9B:", solveDay9B())
 
