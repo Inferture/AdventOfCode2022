@@ -1,7 +1,8 @@
 #Utilities
+
 from parse import *
 import numpy as np
-import os
+
 def getInput(day):
     f = open("./input_" + str(day) + ".txt")
     return f.read()
@@ -310,7 +311,7 @@ def solveDay9A():
             lastHeadPosition = headPosition
             headPosition = headPosition + normDelta
             ropeDiff = headPosition - tailPosition
-            if abs(ropeDiff[0]) + abs(ropeDiff[1])>2 or abs(ropeDiff[0])>1 or abs(ropeDiff[1])>1:
+            if abs(ropeDiff[0]) + abs(ropeDiff[1]) > 2 or abs(ropeDiff[0]) > 1 or abs(ropeDiff[1]) > 1:
                 tailPosition = lastHeadPosition
                 visitedPositions.append(tuple(tailPosition))
     return len(dict.fromkeys(visitedPositions))    
@@ -329,7 +330,7 @@ def solveDay9B():
             knotPositions[0] = knotPositions[0] + normDelta
             for i in range(len(knotPositions)-1):
                 ropeDiff = knotPositions[i] - knotPositions[i+1]
-                if abs(ropeDiff[0]) + abs(ropeDiff[1])>2 or abs(ropeDiff[0])>1 or abs(ropeDiff[1])>1:
+                if abs(ropeDiff[0]) + abs(ropeDiff[1]) > 2 or abs(ropeDiff[0]) > 1 or abs(ropeDiff[1]) > 1:
                     knotPositions[i+1] += np.array((sign(ropeDiff[0]), sign(ropeDiff[1])))
                     if i == len(knotPositions) - 2:
                         visitedPositions.append(tuple(knotPositions[-1]))
@@ -337,8 +338,57 @@ def solveDay9B():
                     break
     return len(dict.fromkeys(visitedPositions))
 
-        
-        
+
+# Day 10
+
+def solveDay10A():
+    lines = getInputSplit(10)
+    curInstrIndex = 0
+    X = 1
+    flaggedInstr = [20 + 40 * i for i in range(6)]
+    curFlagInstrIndex = 0
+    signal = 0
+    for line in lines:
+        instr = line.split(' ')[0]
+        if instr == "noop":
+            curInstrIndex += 1
+            if curInstrIndex >= flaggedInstr[curFlagInstrIndex]:
+                signal += flaggedInstr[curFlagInstrIndex] * X
+                curFlagInstrIndex += 1
+        if instr == "addx":
+            num = int(line.split(' ')[1])
+            curInstrIndex += 2
+            if curInstrIndex >= flaggedInstr[curFlagInstrIndex]:
+                signal += flaggedInstr[curFlagInstrIndex] * X
+                curFlagInstrIndex += 1
+            X += num
+        if curFlagInstrIndex >= len(flaggedInstr):
+            break
+    return signal
+
+def solveDay10B():
+    output = "\n"
+    lines = getInputSplit(10)
+    curInstrIndex = 0
+    X = 1
+    for line in lines:
+        instr = line.split(' ')[0]
+        if instr == "noop":
+            output += "#" if abs(curInstrIndex % 40 - X) <= 1 else "."
+            curInstrIndex += 1
+            if curInstrIndex % 40 == 0:
+                output += "\n"
+            
+        if instr == "addx":
+            num = int(line.split(' ')[1])
+            for i in range(2):
+                output += "#" if abs(curInstrIndex % 40 - X) <= 1 else "."
+                curInstrIndex += 1
+                if curInstrIndex % 40 == 0:
+                    output += "\n"
+            X += num
+    return output
+
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
@@ -357,4 +407,5 @@ print("8A:", solveDay8A())
 print("8B:", solveDay8B())
 print("9A:", solveDay9A())
 print("9B:", solveDay9B())
-
+print("10A:", solveDay10A())
+print("10B:", solveDay10B())
