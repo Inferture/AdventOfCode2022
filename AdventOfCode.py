@@ -389,6 +389,83 @@ def solveDay10B():
             X += num
     return output
 
+
+#Day 11
+
+class Monkey:
+    def __init__(self, parsed):
+        self.num = parsed["monkeyNum"]
+        self.items = [int(d.strip()) for d in parsed["startingItems"].split(",")]
+        self.operation = parsed["operation"]
+        self.operand = parsed["operand"]
+        self.divisor = parsed["divisor"]
+        self.monkeyTrue = parsed["monkeyTrue"]
+        self.monkeyFalse = parsed["monkeyFalse"]
+
+    def handleItems(self, monkeys, divide, prod):
+        for worry in self.items:
+            numOperand = worry if self.operand == "old" else int(self.operand)
+            newWorry = worry * numOperand if self.operation == "*" else worry + numOperand
+            if divide:
+                newWorry = int(newWorry/3)
+            else:
+                newWorry = int(newWorry % prod)
+            newMonkey = self.monkeyTrue if newWorry % self.divisor == 0 else self.monkeyFalse
+            monkeys[newMonkey].items.append(newWorry)
+        self.items=[]
+        
+def solveDay11A():
+    blocks = getInput(11).strip().split('\n\n')
+    monkeys = {}
+    for block in blocks:
+        parsed = parse("""Monkey {monkeyNum:d}:
+  Starting items: {startingItems}
+  Operation: new = old {operation} {operand}
+  Test: divisible by {divisor:d}
+    If true: throw to monkey {monkeyTrue:d}
+    If false: throw to monkey {monkeyFalse:d}""", block)
+        monkey = Monkey(parsed)
+        monkeys[monkey.num] = monkey
+    timeCountedItem = {monkeyNum: 0 for monkeyNum in monkeys}
+    monkeyNums = list(monkeys.keys())
+    monkeyNums.sort()
+    for i in range(20):
+        for monkeyNum in monkeyNums:
+            monkey = monkeys[monkeyNum]
+            #print(monkey)
+            timeCountedItem[monkey.num] += len(monkey.items)
+            monkey.handleItems(monkeys, True, 1)
+    listCountedItems = list(timeCountedItem.values())
+    listCountedItems.sort()
+    return listCountedItems[-1] * listCountedItems[-2]
+    
+def solveDay11B():
+    blocks = getInput(11).strip().split('\n\n')
+    monkeys = {}
+    prod = 1
+    for block in blocks:
+        parsed = parse("""Monkey {monkeyNum:d}:
+  Starting items: {startingItems}
+  Operation: new = old {operation} {operand}
+  Test: divisible by {divisor:d}
+    If true: throw to monkey {monkeyTrue:d}
+    If false: throw to monkey {monkeyFalse:d}""", block)
+        monkey = Monkey(parsed)
+        monkeys[monkey.num] = monkey
+        prod *= monkey.divisor
+    timeCountedItem = {monkeyNum: 0 for monkeyNum in monkeys}
+    monkeyNums = list(monkeys.keys())
+    monkeyNums.sort()
+    for i in range(10000):
+        for monkeyNum in monkeyNums:
+            monkey = monkeys[monkeyNum]
+            timeCountedItem[monkey.num] += len(monkey.items)
+            monkey.handleItems(monkeys, False, prod)
+    listCountedItems = list(timeCountedItem.values())
+    listCountedItems.sort()
+    return listCountedItems[-1] * listCountedItems[-2]
+
+
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
@@ -409,3 +486,5 @@ print("9A:", solveDay9A())
 print("9B:", solveDay9B())
 print("10A:", solveDay10A())
 print("10B:", solveDay10B())
+print("11A:", solveDay11A())
+print("11B:", solveDay11B())
