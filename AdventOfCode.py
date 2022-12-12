@@ -466,6 +466,67 @@ def solveDay11B():
     return listCountedItems[-1] * listCountedItems[-2]
 
 
+# Day 12
+
+def getNewPoints(heightMap, grid, i, j, v):
+    return [(m,n) for (m,n) in [(i+1, j), (i-1,j), (i,j-1), (i,j+1)] if 0<=m<len(grid) \
+                  and 0<=n<len(grid[0]) and grid[m][n]> v and heightMap[m][n] <= heightMap[i][j] + 1]
+
+def solveDay12A():
+    start = (-1,-1)
+    end = (-1,-1)
+    lines = getInputSplit(12)
+    for i in range(len(lines)):
+        for j in range(len(lines[i])):
+            if(lines[i][j]=='E'):
+                       end = (i,j)
+            if(lines[i][j]=='S'):
+                       start = (i,j)
+    heightMap = [[charValue(c) for c in line.replace("S", "a").replace("E", "z")] for line in lines]
+    distanceGrid = [[float('inf') for c in line] for line in lines]
+    distanceGrid[start[0]][start[1]] = 0
+    currentDistance = 0
+    reachedPoints = [start]
+    lastPoints = [start]
+    while not end in reachedPoints:
+        newPoints = []
+        currentDistance += 1
+        for (i,j) in lastPoints:
+            newPoints = newPoints + getNewPoints(heightMap, distanceGrid, i, j, currentDistance)
+        for (m,n) in newPoints:
+            distanceGrid[m][n] = currentDistance
+        reachedPoints = reachedPoints + newPoints
+        lastPoints = list(dict.fromkeys(newPoints))
+    return currentDistance
+    
+def solveDay12B():
+    start = (-1,-1)
+    end = (-1,-1)
+    lines = getInputSplit(12)
+    for i in range(len(lines)):
+        for j in range(len(lines[i])):
+            if(lines[i][j]=='E'):
+                       end = (i,j)
+            if(lines[i][j]=='S'):
+                       start = (i,j)
+    heightMap = [[charValue(c) for c in line.replace("S", "a").replace("E", "z")] for line in lines]
+    distanceGrid = [[float('inf') for c in line] for line in lines]
+    distanceGrid[start[0]][start[1]] = 0
+    currentDistance = 0
+    reachedPoints = [(i,j) for i in range(len(heightMap)) for j in range(len(heightMap[0])) if heightMap[i][j] == charValue('a')]
+    lastPoints = reachedPoints + []
+    while not end in reachedPoints:
+        newPoints = []
+        currentDistance +=1
+        for (i,j) in lastPoints:
+            newPoints = newPoints + getNewPoints(heightMap, distanceGrid, i, j, currentDistance)
+        for (m,n) in newPoints:
+            distanceGrid[m][n] = currentDistance
+        reachedPoints = reachedPoints + newPoints
+        lastPoints = list(dict.fromkeys(newPoints))
+    return currentDistance
+                       
+
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
@@ -488,3 +549,5 @@ print("10A:", solveDay10A())
 print("10B:", solveDay10B())
 print("11A:", solveDay11A())
 print("11B:", solveDay11B())
+print("12A:", solveDay12A())
+print("12B:", solveDay12B())
