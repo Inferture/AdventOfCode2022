@@ -525,8 +525,71 @@ def solveDay12B():
         reachedPoints = reachedPoints + newPoints
         lastPoints = list(dict.fromkeys(newPoints))
     return currentDistance
-                       
 
+
+# Day 13
+
+def parseList(line):
+    currentList=[]
+    listsHierarchy=[currentList]
+    currentNum = 0
+    browsingNumber=False
+    for c in line:
+        if browsingNumber and (c == ']' or c == ','):
+            currentList.append(currentNum)
+            currentNum = 0
+            browsingNumber=False
+        if c == '[':
+            newList=[]
+            currentList.append(newList)
+            currentList = newList
+            listsHierarchy.append(newList)
+        elif c == ']':
+            listsHierarchy = listsHierarchy[:len(listsHierarchy)-1]
+            currentList = listsHierarchy[len(listsHierarchy)-1]
+        elif c != ',':
+            currentNum = currentNum * 10 + int(c)
+            browsingNumber=True
+    return currentList
+
+def compareLists(list1, list2):
+    if(len(list1) == 0 or len(list2) == 0):
+        return 0 if len(list1) == len(list2) == 0 else 1 if len(list2) == 0 else -1
+    if(type(list1[0]) == int and type(list2[0]) == list):
+        list1[0] = [list1[0]]
+    if(type(list1[0]) == list and type(list2[0]) == int):
+        list2[0] = [list2[0]]
+    if(type(list1[0]) == list):
+        comp = compareLists(list1[0], list2[0])
+        return comp if comp != 0 else compareLists(list1[1:], list2[1:])
+    if(type(list1[0]) == int):
+        return list1[0] - list2[0] if list1[0] != list2[0] else compareLists(list1[1:], list2[1:])
+
+def solveDay13A():
+    blocks = getInput(13).strip().split('\n\n')
+    total=0
+    for i in range(len(blocks)):
+        list1 = parseList(blocks[i].split('\n')[0])
+        list2 = parseList(blocks[i].split('\n')[1])
+        if(compareLists(list1, list2) <= 0):
+            total += i + 1
+    return total
+
+def solveDay13B():
+    lists = [parseList(line) for line in getInputSplit(13) if len(line.strip())>0]
+    index1=1
+    index2=2
+    for listToSort in lists:
+        if(compareLists(listToSort, [[2]]) <= 0):
+            index1+=1
+            index2+=1
+        elif(compareLists(listToSort, [[6]]) <= 0):
+            index2+=1
+    return index1 * index2
+
+
+
+    
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
@@ -551,3 +614,5 @@ print("11A:", solveDay11A())
 print("11B:", solveDay11B())
 print("12A:", solveDay12A())
 print("12B:", solveDay12B())
+print("13A:", solveDay13A())
+print("13B:", solveDay13B())
