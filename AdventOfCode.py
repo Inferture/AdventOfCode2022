@@ -588,6 +588,102 @@ def solveDay13B():
     return index1 * index2
 
 
+#Day 14
+
+def getGrid14():
+    lines = getInputSplit(14)
+    minx, maxx, miny, maxy = float('inf'),0,0,0
+    for line in lines:
+        for s in line.split("->"):
+            [x,y] = s.split(',')
+            minx, maxx = min(minx, int(x.strip())), max(maxx, int(x.strip()))
+            maxy =  max(maxy, int(y.strip()))
+    grid = [["." for i in range(minx, maxx + 1)] for j in range(miny, maxy + 1)]
+    grid[0][500-minx] = "+"
+    for line in lines:
+        rockPoints = line.split("->")
+        for i in range(len(rockPoints) - 1):
+            x0 = int(rockPoints[i].split(',')[0].strip())
+            y0 = int(rockPoints[i].split(',')[1].strip())
+            x1 = int(rockPoints[i+1].split(',')[0].strip())
+            y1 = int(rockPoints[i+1].split(',')[1].strip())
+            x0,x1=min(x0,x1),max(x0,x1)
+            y0,y1=min(y0,y1),max(y0,y1)
+            for y in range(y0, y1+1):
+                    for x in range(x0, x1+1):
+                        grid[y-miny][x-minx] = "#"
+    return grid, minx, maxx, miny, maxy
+
+def solveDay14A():
+    grid, minx, maxx, miny, maxy = getGrid14()
+    filled = False
+    sandGrains=-1
+    while not filled:
+        sand = (500 - minx,0)
+        sandGrains +=1
+        falling=True
+        while sand[0] in range(0, len(grid[0])) and sand[1] in range(0, len(grid)) and falling:
+            if(len(grid)<=sand[1] + 1):
+                filled=True
+                break
+            if(grid[sand[1] + 1][sand[0]] in ('o', '#')):
+                if(sand[0] - 1 < 0):
+                    filled=True
+                    break
+                if(grid[sand[1] + 1][sand[0] - 1] in ('o', '#')):
+                    if(sand[0] + 1 >= len(grid[0])):
+                        filled=True
+                        break
+                    if(grid[sand[1] + 1][sand[0] + 1] in ('o', '#')):
+                        grid[sand[1]][sand[0]]="o"
+                        falling=False
+                    else:
+                        sand = (sand[0] + 1,sand[1] + 1)
+                else:
+                    sand = (sand[0] - 1,sand[1] + 1)
+            else:
+                sand = (sand[0],sand[1] + 1)
+    return sandGrains
+
+def solveDay14B():
+    grid, minx, maxx, miny, maxy = getGrid14()
+    newLength = len(grid) + 2
+    for i in range(len(grid)):
+        grid[i] = newLength * ["."] + grid[i] + newLength * ["."]
+    grid.append(['.'] * len(grid[0]))
+    grid.append(['#'] * len(grid[0]))
+    minx, maxx, miny, maxy =  minx - newLength, maxx + newLength, miny - newLength, maxy + newLength
+    filled = False
+    sandGrains=0
+    while not filled:
+        sand = (500 - minx,0)
+        sandGrains +=1
+        falling=True
+        while sand[0] in range(0, len(grid[0])) and sand[1] in range(0, len(grid)) and falling:
+            if(len(grid)<=sand[1] + 1):
+                filled=True
+                break
+            if(grid[sand[1] + 1][sand[0]] in ('o', '#')):
+                if(sand[0] - 1 < 0):
+                    filled=True
+                    break
+                if(grid[sand[1] + 1][sand[0] - 1] in ('o', '#')):
+                    if(sand[0] + 1 >= len(grid[0])):
+                        filled=True
+                        break
+                    if(grid[sand[1] + 1][sand[0] + 1] in ('o', '#')):
+                        grid[sand[1]][sand[0]]="o"
+                        if(sand == (500 - minx, 0)):
+                           filled=True
+                        falling=False
+                    else:
+                        sand = (sand[0] + 1,sand[1] + 1)
+                else:
+                    sand = (sand[0] - 1,sand[1] + 1)
+            else:
+                sand = (sand[0],sand[1] + 1)
+    return sandGrains
+
 
     
 print("1A:", solveDay1A())
@@ -616,3 +712,5 @@ print("12A:", solveDay12A())
 print("12B:", solveDay12B())
 print("13A:", solveDay13A())
 print("13B:", solveDay13B())
+print("14A:", solveDay14A())
+print("14B:", solveDay14B())
