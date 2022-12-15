@@ -432,7 +432,6 @@ def solveDay11A():
     for i in range(20):
         for monkeyNum in monkeyNums:
             monkey = monkeys[monkeyNum]
-            #print(monkey)
             timeCountedItem[monkey.num] += len(monkey.items)
             monkey.handleItems(monkeys, True, 1)
     listCountedItems = list(timeCountedItem.values())
@@ -685,6 +684,79 @@ def solveDay14B():
     return sandGrains
 
 
+#Day 15
+
+def solveDay15A():
+    lines = getInputSplit(15)
+    checkY = 2000000
+    beaconsAtCheckY = []
+    forbiddenSegments = []
+    for line in lines:
+        parsed = parse("Sensor at x={sx:d}, y={sy:d}: closest beacon is at x={bx:d}, y={by:d}", line)
+        sx,sy,bx,by = parsed["sx"], parsed["sy"], parsed["bx"], parsed["by"]
+        if by == checkY:
+            beaconsAtCheckY.append(bx)
+        distance = abs(sx-bx)+abs(sy-by)
+        if(abs(sy - checkY) < distance):
+            forbiddenSegments.append((sx - distance + abs(sy - checkY), sx + distance - abs(sy - checkY)))
+    
+    xmin = min([x0 for (x0,x1) in forbiddenSegments])
+    xmax = max([x1 for (x0,x1) in forbiddenSegments])
+    forbiddenPositionCount = 0
+    for x in range(xmin, xmax+1):
+        if not x in beaconsAtCheckY:
+            for (x0,x1) in forbiddenSegments:
+                if(x0<=x<=x1):
+                    forbiddenPositionCount += 1
+                    break
+    return forbiddenPositionCount
+
+def solveDay15B():
+    lines = getInputSplit(15)
+    checkY = 2000000
+    size=20
+    size=4_000_000
+    candidatesSegments = []
+    xmin, xmax, ymin, ymax=0, size, 0, size
+    sensorDistances=[]
+    beacons =[]
+    for line in lines:
+        parsed = parse("Sensor at x={sx:d}, y={sy:d}: closest beacon is at x={bx:d}, y={by:d}", line)
+        sx,sy,bx,by = parsed["sx"], parsed["sy"], parsed["bx"], parsed["by"]
+        distance = abs(sx-bx)+abs(sy-by)
+        sensorDistances.append((sx, sy, distance))
+        beacons.append((bx,by))
+        y0 = sy - distance - 1
+        y1 = sy + distance + 1
+        x0 = sx - distance - 1
+        x1 = sx + distance + 1
+        candidatesSegments.append((x0,sy,sx,y0))
+        candidatesSegments.append((x0,sy,sx,y1))
+        candidatesSegments.append((sx,y0,x1,sy))
+        candidatesSegments.append((sx,y1,x1,sy))
+        
+    for i in range(len(candidatesSegments)):
+        c=candidatesSegments[i]
+        s= sign((c[0]-c[2])*(c[1] -c[3]))
+        for j in range(i+1, len(candidatesSegments)):
+            c1=c
+            c2=candidatesSegments[j]
+            if s != sign((c2[0]-c2[2])*(c2[1] - c2[3])):
+                if s<0:
+                    c1,c2 =c2,c1
+                x = int( (c1[0] + c2[0] + c2[1] - c1[1]) / 2 )
+                y = c1[1] + (x - c1[0])
+                if max(xmin, c1[0], c2[0]) <= x <= min(xmax, c1[2], c2[2]) and max(ymin, c1[1], c2[3]) <= y <= min(ymax, c1[3], c2[1]):
+                    isForbidden = False
+                    for sen in sensorDistances:
+                        distance = abs(x -sen[0]) + abs(y -sen[1])
+                        if distance <= sen[2]:
+                            isForbidden = True
+                            break
+                    if not isForbidden and not (x,y) in beacons:
+                        return 4000000 * x + y
+
+
     
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
@@ -714,3 +786,5 @@ print("13A:", solveDay13A())
 print("13B:", solveDay13B())
 print("14A:", solveDay14A())
 print("14B:", solveDay14B())
+print("15A:", solveDay15A())
+print("15B:", solveDay15B())
