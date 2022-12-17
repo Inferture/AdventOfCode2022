@@ -757,7 +757,114 @@ def solveDay15B():
                         return 4000000 * x + y
 
 
+#Day 16
+
+def parse16():
+    lines = getInputSplit(16)
+    rates={}
+    connections={}
+    for line in lines:
+        parsed=parse("Valve {valve} has flow rate={rate:d}; {}valv{} {connections}", line)
+        valve=parsed["valve"]
+        rate=parsed["rate"]
+        links = [link.strip() for link in parsed["connections"].split(',')]
+        rates[valve]=rate
+        connections[valve]=links
+    return rates, connections
+
+
+def testRoom(room, rates, distances, time, visitedRooms):
+    visitedRooms.sort()
+    if(time<=1):
+        return 0
+    potentialNextRooms = [nextRoom for nextRoom in rates if nextRoom not in visitedRooms + [room] and distances[(room, nextRoom)] + 2 < time and rates[nextRoom] > 0]
+    return rates[room] * (time - 1) + (0 if len(potentialNextRooms) == 0 else max([testRoom(nextRoom, rates, distances, time - 1 - distances[(room, nextRoom)], visitedRooms + [room]) for nextRoom in potentialNextRooms]))
+
+def testRoomTeamSlow(room1, room2, rates, distances, time1, time2, visitedRooms):
     
+    potentialNextRooms1 = [nextRoom for nextRoom in rates if nextRoom not in visitedRooms + [room1, room2] and distances[(room1, nextRoom)] + 2 < time1 and rates[nextRoom] > 0]
+    potentialNextRooms2 = [nextRoom for nextRoom in rates if nextRoom not in visitedRooms + [room1, room2] and distances[(room2, nextRoom)] + 2 < time2 and rates[nextRoom] > 0]
+    
+    if(room1 == "**"):
+        return testRoom(room2, rates, distances, time2, visitedRooms)
+    if(room2 == "**"):
+        return testRoom(room1, rates, distances, time1, visitedRooms)
+    gain = rates[room1] * (time1 - 1) + rates[room2] * (time2 - 1)
+    if(len(potentialNextRooms1) == len(potentialNextRooms2) == 0):
+        return gain
+    potentialNextRooms1 += ["**"]
+    potentialNextRooms2 += ["**"]
+    if(len(potentialNextRooms1) == 0 or len(potentialNextRooms2) == 0):
+        potentialNextRooms, room, time = (potentialNextRooms1, room1, time1) if len(potentialNextRooms2) == 0 else (potentialNextRooms2, room2, time2)
+        return gain + max([testRoom(nextRoom, rates, distances, time - 1 - distances[(room, nextRoom)], visitedRooms + [room1, room2]) for nextRoom in potentialNextRooms])
+    potentialCouples = [(nextRoom1, nextRoom2) for nextRoom1 in potentialNextRooms1 for nextRoom2 in potentialNextRooms2 if nextRoom1 != nextRoom2
+                        and ("**" in (nextRoom1, nextRoom2)
+                             or not(time1 - 1 - distances[(room1, nextRoom1)] < time2 - 1 - distances[(room2, nextRoom1)]
+                                and time2 - 1 - distances[(room2, nextRoom2)] <= time1 - 1 - distances[(room1, nextRoom2)]))]
+    couplesToPop=[]
+    for i in range(len(potentialCouples)):
+        (nextRoom1, nextRoom2) = potentialCouples[i]
+        if not "**" in  (nextRoom1, nextRoom2):
+            newTime1 = time1 - 1 - distances[(room1, nextRoom1)]
+            newTime2 = time2 - 1 - distances[(room2, nextRoom2)]
+            newTime21 = time1 - 1 - distances[(room1, nextRoom2)]
+            newTime12 = time2 - 1 - distances[(room2, nextRoom1)]
+            
+            if newTime1 < newTime12 and newTime2 <= newTime21 or newTime1 <= newTime12 and newTime2 < newTime21 or newTime1 == newTime12 and newTime2 == newTime21 and nextRoom1<nextRoom2:
+                couplesToPop.append(i)
+    for i in couplesToPop[::-1]:
+        potentialCouples.pop(i)
+    return gain + max([testRoomTeamSlow(nextRoom1, nextRoom2, rates, distances, time1 - 1 - distances[(room1, nextRoom1)], time2 - 1 - distances[(room2, nextRoom2)], visitedRooms + [room1, room2])\
+                for nextRoom1, nextRoom2 in potentialCouples])
+
+
+def solveDay16A():
+    rates, connections = parse16()
+    distances = {}
+    for room in rates:
+        reached=[room]
+        lastReached = [room]
+        currentDistance=0
+        while len(lastReached)>0:
+            currentDistance+=1
+            newlyReached=[]
+            for room2 in lastReached:
+                for newRoom in connections[room2]:
+                    if newRoom not in reached:
+                        distances[(room, newRoom)] = currentDistance
+                        newlyReached.append(newRoom)
+                        reached.append(newRoom)
+            lastReached = newlyReached
+    return testRoom("AA", rates, distances, 31, [])
+    
+
+def solveDay16B():
+    rates, connections = parse16()
+    distances = {}
+    for room in rates:
+        reached=[room]
+        lastReached = [room]
+        currentDistance=0
+        while len(lastReached)>0:
+            currentDistance+=1
+            newlyReached=[]
+            for room2 in lastReached:
+                for newRoom in connections[room2]:
+                    if newRoom not in reached:
+                        distances[(room, newRoom)] = currentDistance
+                        newlyReached.append(newRoom)
+                        reached.append(newRoom)
+            lastReached = newlyReached
+    
+    rates["**"]=0
+    for room in rates:
+        distances[(room, "**")] = 0
+        distances[("**", room)] = 0
+    return testRoomTeamSlow("AA", "AA", rates, distances, 27, 27, [])
+    #return testRoomTeam("AA", "AA", rates, distances, 27, 27, [], [], 0, 0, {})
+
+
+
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
@@ -788,3 +895,5 @@ print("14A:", solveDay14A())
 print("14B:", solveDay14B())
 print("15A:", solveDay15A())
 print("15B:", solveDay15B())
+print("16A:", solveDay16A())
+#print("16B:", solveDay16B()) #Warning: extremely slow
