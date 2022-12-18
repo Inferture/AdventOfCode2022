@@ -969,7 +969,8 @@ def solveDay17B():
             wind = winds[windIndex%len(winds)]
             if windIndex % len(winds) == 0 and not looped:
                 for i in range(len(terrainAtFirstWind)):
-                    if terrain == terrainAtFirstWind[i][0] and pos == terrainAtFirstWind[i][1] and shapeCounter % len(shapes) == terrainAtFirstWind[i][2] % len(shapes):                        loopLength = shapeCounter - terrainAtFirstWind[i][2]
+                    if terrain == terrainAtFirstWind[i][0] and pos == terrainAtFirstWind[i][1] and shapeCounter % len(shapes) == terrainAtFirstWind[i][2] % len(shapes):
+                        loopLength = shapeCounter - terrainAtFirstWind[i][2]
                         altitudeGain = minAltitude - terrainAtFirstWind[i][3]
                         loopsLeft = (rocksNumber - shapeCounter) // loopLength
                         minAltitude += altitudeGain * loopsLeft
@@ -1039,6 +1040,58 @@ def solveDay17B():
     return altitude + minAltitude
 
 
+#Day 18
+
+def solveDay18A():
+    #lines = a.split('\n')
+    lines = getInputSplit(18)
+    cubes = []
+    for line in lines:
+        cubes.append((int(line.split(',')[0]),int(line.split(',')[1]),int(line.split(',')[2])))
+    cubes.sort()
+    coveredSides=0
+    for i in range(len(cubes)):
+        for j in range(i+1, len(cubes)):
+            ci, cj = cubes[i], cubes[j]
+            if(abs(ci[0]-cj[0]) + abs(ci[1]-cj[1]) + abs(ci[2]-cj[2]) == 1):
+                coveredSides+=2
+    return len(cubes) * 6 - coveredSides
+
+def solveDay18B():
+    lines = getInputSplit(18)
+    cubes = []
+    for line in lines:
+        cubes.append((int(line.split(',')[0]),int(line.split(',')[1]),int(line.split(',')[2])))
+    cubes.sort()
+    bounds =(min([x for (x,y,z) in cubes])-1, min([y for (x,y,z) in cubes])-1, min([z for (x,y,z) in cubes])-1),(max([x for (x,y,z) in cubes])+1,max([y for (x,y,z) in cubes])+1,max([z for (x,y,z) in cubes])+1)
+    start = bounds[0]
+    newPoints = [start]
+    reachedPoints = [start]
+    while len(newPoints)>0:
+        reachedPoints.sort()
+        #print(reachedPoints)
+        nextPoints=[]
+        for (u,v,w) in newPoints:
+            pointsToAdd = [ (x,y,z) for (x,y,z) in [(u+1,v,w),(u-1,v,w),(u,v+1,w),(u,v-1,w),(u,v,w+1),(u,v,w-1)] if (x,y,z) not in reachedPoints and (x,y,z) not in cubes and bounds[0][0]<=x<=bounds[1][0] and bounds[0][1]<=y<=bounds[1][1] and bounds[0][2]<=z<=bounds[1][2]]
+            reachedPoints = list(dict.fromkeys(reachedPoints + pointsToAdd))
+            nextPoints+=pointsToAdd
+        newPoints = list(dict.fromkeys(nextPoints))
+    newCubes=[]
+    for x in range(bounds[0][0]+1, bounds[1][0]):
+        for y in range(bounds[0][1]+1, bounds[1][1]):
+            for z in range(bounds[0][2]+1, bounds[1][2]):
+                if(x,y,z) not in reachedPoints:
+                    newCubes.append((x,y,z))
+    coveredSides=0
+    for i in range(len(newCubes)):
+        for j in range(i+1, len(newCubes)):
+            ci, cj = newCubes[i], newCubes[j]
+            if(abs(ci[0]-cj[0]) + abs(ci[1]-cj[1]) + abs(ci[2]-cj[2]) == 1):
+                coveredSides+=2
+    return len(newCubes) * 6 - coveredSides
+
+
+    
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
@@ -1072,4 +1125,6 @@ print("15B:", solveDay15B())
 print("16A:", solveDay16A())
 #print("16B:", solveDay16B()) #Warning: extremely slow
 print("17A:", solveDay17A())
-#print("17B:", solveDay17B()) #Slow, consider trying with accurate put at False line 1019
+#print("17B:", solveDay17B()) #Slow, consider trying with the boolean 'accurate' at False line 1019
+print("18A:", solveDay18A())
+print("18B:", solveDay18B())
