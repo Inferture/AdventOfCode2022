@@ -864,6 +864,180 @@ def solveDay16B():
     #return testRoomTeam("AA", "AA", rates, distances, 27, 27, [], [], 0, 0, {})
 
 
+#Day 17
+
+def printTerrain(terrain, shape, pos, direction):
+    print(pos)
+    s=""
+    for i in range(len(terrain)-1,-1,-1):
+        for j in range(len(terrain[i])):
+            s += "#" if terrain[i][j] else "o" if pos[1]<=i<pos[1]+len(shape) and  pos[0]<=j<pos[0]+len(shape[0]) and shape[i - pos[1]][j - pos[0]] else "."
+        s+="\n"
+    print(s)
+    s+="~~~~~~~\n"
+    print(direction)
+                   
+def solveDay17A():
+    winds = getInput(17).strip()
+    shapeDrawings = ["####", ".#._###_.#.", "..#_..#_###", "#_#_#_#", "##_##"]
+    shapes = []
+    for shapeDrawing in shapeDrawings:
+        shapeDrawingLines = shapeDrawing.split("_")
+        shapeLines = [[False for j in range(len(shapeDrawingLines[0]))] for i in range(len(shapeDrawingLines))]
+        for i in range(len(shapeDrawingLines)-1,-1, -1):
+            for j in range(len(shapeDrawingLines[i])):
+                shapeLines[i][j] = shapeDrawingLines[-i-1][j] == "#"
+        shapes.append(shapeLines)
+    altitude=0
+    terrain=[[False for i in range(7)] for j in range(4)]
+
+    shapeCounter=0
+    windIndex = 0
+    while shapeCounter < 2022:
+        shapeStopped=False
+        shape = shapes[shapeCounter%len(shapes)]
+        pos =  [2, altitude + 3]
+        shapeCounter+=1
+        while not shapeStopped:
+            wind = winds[windIndex%len(winds)]
+            windIndex+=1
+            delta = 1 if wind == '>' else -1
+            collision=False
+            if delta > 0 and pos[0] + len(shape[0]) > 6:
+                collision=True
+            if delta < 0 and pos[0] <= 0:
+                collision=True
+            for i in range(len(shape)):
+                if collision:
+                   break
+                for j in range(len(shape[i])):
+                    if shape[i][j] and  pos[1] + i < len(terrain) and terrain[pos[1] + i][pos[0] + j + delta]:
+                        collision=True
+                        break
+            if not collision:
+                pos = [pos[0] + delta, pos[1]]
+            
+            collision=pos[1]==0
+            for i in range(len(shape)):
+                if collision:
+                   break
+                for j in range(len(shape[i])):
+                    if shape[i][j] and pos[1] + i - 1< len(terrain) and terrain[pos[1] + i - 1][pos[0] + j]:
+                        collision=True
+                        break
+            if not collision:
+                pos = [pos[0], pos[1] - 1]
+            else:
+                shapeStopped=True
+                newAltitude = max(altitude, pos[1] + len(shape))
+                if(newAltitude > altitude):
+                    terrain += [[False for i in range(7)] for j in range(newAltitude - altitude)]
+                altitude = newAltitude
+                for i in range(len(shape)):
+                    for j in range(len(shape[0])):
+                        terrain[pos[1]+i][pos[0]+j] = terrain[pos[1]+i][pos[0]+j] or shape[i][j]
+    return altitude
+
+def solveDay17B():
+    winds = getInput(17).strip()
+    shapeDrawings = ["####", ".#._###_.#.", "..#_..#_###", "#_#_#_#", "##_##"]
+    shapes = []
+    looped = False
+    for shapeDrawing in shapeDrawings:
+        shapeDrawingLines = shapeDrawing.split("_")
+        shapeLines = [[False for j in range(len(shapeDrawingLines[0]))] for i in range(len(shapeDrawingLines))]
+        for i in range(len(shapeDrawingLines)-1,-1, -1):
+            for j in range(len(shapeDrawingLines[i])):
+                shapeLines[i][j] = shapeDrawingLines[-i-1][j] == "#"
+        shapes.append(shapeLines)
+    altitude=0
+    minAltitude=0
+    maximums=[0 for i in range(7)]
+    terrain=[[False for i in range(7)] for j in range(4)]
+
+    shapeCounter=0
+    windIndex = 0
+    terrainAtFirstWind = []
+    rocksNumber = 1000000000000
+    while shapeCounter < rocksNumber:
+        shapeStopped=False
+        shape = shapes[shapeCounter%len(shapes)]
+        pos =  [2, altitude + 3]
+        shapeCounter+=1
+        while not shapeStopped:
+            #print(altitude)
+            wind = winds[windIndex%len(winds)]
+            if windIndex % len(winds) == 0 and not looped:
+                for i in range(len(terrainAtFirstWind)):
+                    if terrain == terrainAtFirstWind[i][0] and pos == terrainAtFirstWind[i][1] and shapeCounter % len(shapes) == terrainAtFirstWind[i][2] % len(shapes):                        loopLength = shapeCounter - terrainAtFirstWind[i][2]
+                        altitudeGain = minAltitude - terrainAtFirstWind[i][3]
+                        loopsLeft = (rocksNumber - shapeCounter) // loopLength
+                        minAltitude += altitudeGain * loopsLeft
+                        shapeCounter += loopsLeft * loopLength
+                        looped = True
+                terrainAtFirstWind.append(([v + [] for v in terrain], pos + [], shapeCounter, minAltitude))
+                
+            windIndex+=1
+            delta = 1 if wind == '>' else -1
+            collision=False
+            if delta > 0 and pos[0] + len(shape[0]) > 6:
+                collision=True
+            if delta < 0 and pos[0] <= 0:
+                collision=True
+            for i in range(len(shape)):
+                if collision:
+                   break
+                for j in range(len(shape[i])):
+                    if shape[i][j] and  pos[1] + i < len(terrain) and terrain[pos[1] + i][pos[0] + j + delta]:
+                        collision=True
+                        break
+            if not collision:
+                pos = [pos[0] + delta, pos[1]]
+            
+            collision=pos[1]==0
+            for i in range(len(shape)):
+                if collision:
+                   break
+                for j in range(len(shape[i])):
+                    if shape[i][j] and pos[1] + i - 1< len(terrain) and terrain[pos[1] + i - 1][pos[0] + j]:
+                        collision=True
+                        break
+            if not collision:
+                pos = [pos[0], pos[1] - 1]
+            else:
+                shapeStopped=True
+                newAltitude = max(altitude, pos[1] + len(shape))
+                if(newAltitude > altitude):
+                    terrain += [[False for i in range(7)] for j in range(newAltitude - altitude)]
+                altitude = newAltitude
+                for i in range(len(shape)):
+                    for j in range(len(shape[0])):
+                        terrain[pos[1]+i][pos[0]+j] = terrain[pos[1]+i][pos[0]+j] or shape[i][j]
+
+                accurate=True#Put to False to significantly reduce time, might give the wrong answer though
+                linesToRemove = 0
+                if accurate:
+                    k = len(terrain)-1
+                    reacheableCoords = [(k,j) for j in range(len(terrain[0]))]
+                    newCoords = reacheableCoords+[]
+                    while len(newCoords)>0:
+                        nextCoords=[]
+                        for (u,v) in newCoords:
+                            nextCoords += [(m,n) for (m,n) in [(u+1,v),(u-1,v),(u,v+1), (u,v-1)] if 0<=m<len(terrain) and 0<=n<len(terrain[0]) and (m,n) not in reacheableCoords and not terrain[m][n]]
+                        newCoords = nextCoords + []
+                        reacheableCoords = reacheableCoords + nextCoords
+                    linesToRemove = min(m for (m,n) in reacheableCoords)
+                else:
+                    maximums = [ ( 0 if len([terrain[i][j] for i in range(len(terrain)) if terrain[i][j]]) == 0 else max([i for i in range(len(terrain)) if terrain[i][j]])) for j in range(len(terrain[0]))]
+                    print(maximums)
+                    linesToRemove = min(maximums) - 2 #Decrease further to increase the probability of having the right answer
+                
+                if linesToRemove>0:
+                    terrain = terrain[linesToRemove:]
+                    minAltitude+=linesToRemove
+                    altitude -= linesToRemove
+    return altitude + minAltitude
+
 
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
@@ -897,3 +1071,5 @@ print("15A:", solveDay15A())
 print("15B:", solveDay15B())
 print("16A:", solveDay16A())
 #print("16B:", solveDay16B()) #Warning: extremely slow
+print("17A:", solveDay17A())
+#print("17B:", solveDay17B()) #Slow, consider trying with accurate put at False line 1019
