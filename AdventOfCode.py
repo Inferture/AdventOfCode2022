@@ -1025,8 +1025,8 @@ def solveDay17B():
                         nextCoords=[]
                         for (u,v) in newCoords:
                             nextCoords += [(m,n) for (m,n) in [(u+1,v),(u-1,v),(u,v+1), (u,v-1)] if 0<=m<len(terrain) and 0<=n<len(terrain[0]) and (m,n) not in reacheableCoords and not terrain[m][n]]
-                        newCoords = nextCoords + []
-                        reacheableCoords = reacheableCoords + nextCoords
+                            reacheableCoords = list(dict.fromkeys(reacheableCoords + nextCoords))
+                        newCoords = list(dict.fromkeys(nextCoords + []))
                     linesToRemove = min(m for (m,n) in reacheableCoords)
                 else:
                     maximums = [ ( 0 if len([terrain[i][j] for i in range(len(terrain)) if terrain[i][j]]) == 0 else max([i for i in range(len(terrain)) if terrain[i][j]])) for j in range(len(terrain[0]))]
@@ -1125,6 +1125,6 @@ print("15B:", solveDay15B())
 print("16A:", solveDay16A())
 #print("16B:", solveDay16B()) #Warning: extremely slow
 print("17A:", solveDay17A())
-#print("17B:", solveDay17B()) #Slow, consider trying with the boolean 'accurate' at False line 1019
+print("17B:", solveDay17B())
 print("18A:", solveDay18A())
 print("18B:", solveDay18B())
