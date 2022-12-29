@@ -2,6 +2,7 @@
 
 from parse import *
 import numpy as np
+from numpy.linalg import inv
 
 def getInput(day):
     f = open("./input_" + str(day) + ".txt")
@@ -965,7 +966,6 @@ def solveDay17B():
         pos =  [2, altitude + 3]
         shapeCounter+=1
         while not shapeStopped:
-            #print(altitude)
             wind = winds[windIndex%len(winds)]
             if windIndex % len(winds) == 0 and not looped:
                 for i in range(len(terrainAtFirstWind)):
@@ -1030,7 +1030,6 @@ def solveDay17B():
                     linesToRemove = min(m for (m,n) in reacheableCoords)
                 else:
                     maximums = [ ( 0 if len([terrain[i][j] for i in range(len(terrain)) if terrain[i][j]]) == 0 else max([i for i in range(len(terrain)) if terrain[i][j]])) for j in range(len(terrain[0]))]
-                    print(maximums)
                     linesToRemove = min(maximums) - 2 #Decrease further to increase the probability of having the right answer
                 
                 if linesToRemove>0:
@@ -1043,7 +1042,6 @@ def solveDay17B():
 #Day 18
 
 def solveDay18A():
-    #lines = a.split('\n')
     lines = getInputSplit(18)
     cubes = []
     for line in lines:
@@ -1069,7 +1067,6 @@ def solveDay18B():
     reachedPoints = [start]
     while len(newPoints)>0:
         reachedPoints.sort()
-        #print(reachedPoints)
         nextPoints=[]
         for (u,v,w) in newPoints:
             pointsToAdd = [ (x,y,z) for (x,y,z) in [(u+1,v,w),(u-1,v,w),(u,v+1,w),(u,v-1,w),(u,v,w+1),(u,v,w-1)] if (x,y,z) not in reachedPoints and (x,y,z) not in cubes and bounds[0][0]<=x<=bounds[1][0] and bounds[0][1]<=y<=bounds[1][1] and bounds[0][2]<=z<=bounds[1][2]]
@@ -1091,7 +1088,690 @@ def solveDay18B():
     return len(newCubes) * 6 - coveredSides
 
 
+#Day 19
+
+blueprintsText="""Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
+Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian."""
+
+def domComp(a,b):
+    aDom = True
+    bDom = True
+    for i in range(len(a)):
+        if a[i]<b[i]:
+            aDom = False
+        if a[i]>b[i]:
+            bDom=False
+    return 1 if aDom else -1 if bDom else 0
+
+class Blueprint:
     
+    def __init__(self, parsed):
+        self.num = parsed["num"]
+        self.ore_ore = parsed["ore_ore"]
+        self.clay_ore = parsed["clay_ore"]
+        self.obsidian_ore = parsed["obsidian_ore"]
+        self.obsidian_clay = parsed["obsidian_clay"]
+        self.geode_ore = parsed["geode_ore"]
+        self.geode_obsidian = parsed["geode_obsidian"]
+
+    def maxGeodes(self, turn):
+        ore_bots, clay_bots, obsidian_bots, geode_bots=1,0,0,0
+        ore,clay,obsidian,geode=0,0,0,0
+        max_geodes=0
+        ore_ore, clay_ore, obsidian_ore, obsidian_clay, geode_ore, geode_obsidian = self.ore_ore, self.clay_ore, self.obsidian_ore, self.obsidian_clay, self.geode_ore, self.geode_obsidian
+        states = [[(ore,clay,obsidian,geode), (ore_bots, clay_bots, obsidian_bots, geode_bots), (False, False, False, False)]]
+        
+        maxOre = max(obsidian_ore, clay_ore, geode_ore)
+        maxClay = obsidian_clay
+        maxObsidian = geode_obsidian
+        for i in range(turn):
+            nextStates = []
+            for state in states:
+                
+                ore,clay,obsidian,geode = state[0]
+                ore_bots, clay_bots, obsidian_bots, geode_bots = state[1]
+                alreadyRefused = state[2]
+                
+                orePossible = ore  >= ore_ore
+                clayPossible = ore  >= clay_ore
+                obsidianPossible = ore  >= obsidian_ore and clay >= obsidian_clay
+                geodePossible = ore  >= geode_ore and obsidian >= geode_obsidian
+                
+                ore += ore_bots
+                clay += clay_bots
+                obsidian += obsidian_bots
+                geode += geode_bots
+                
+                if geodePossible and not alreadyRefused[3]:
+                    nextStates.append([(ore - geode_ore,clay,obsidian - geode_obsidian,geode), (ore_bots, clay_bots, obsidian_bots, geode_bots + 1), (False, False, False, False)])
+                if obsidianPossible and obsidian_bots + obsidian // (turn - i) < maxObsidian and not alreadyRefused[2] :
+                    nextStates.append([(ore - obsidian_ore,clay - obsidian_clay,obsidian,geode), (ore_bots, clay_bots, obsidian_bots + 1, geode_bots), (False, False, False, False)])
+                if  clayPossible and clay_bots + clay // (turn - i) < maxClay and obsidian_bots + obsidian // (turn - i) < maxObsidian and not alreadyRefused[1]:
+                    nextStates.append([(ore - clay_ore,clay,obsidian,geode), (ore_bots, clay_bots + 1, obsidian_bots, geode_bots), (False, False, False, False)])
+                if orePossible and ore_bots + ore // (turn - i) < maxOre and not alreadyRefused[0] :
+                    nextStates.append([(ore - ore_ore,clay,obsidian,geode), (ore_bots + 1, clay_bots, obsidian_bots, geode_bots), (False, False, False, False)])
+
+                if False in (orePossible, clayPossible, obsidianPossible, geodePossible):
+                    nextStates.append([(ore,clay,obsidian,geode), (ore_bots, clay_bots, obsidian_bots, geode_bots), (orePossible, clayPossible, obsidianPossible, geodePossible)])
+
+            states = nextStates + []
+        
+        return max([end_geode for ((end_ore,end_clay,end_obsidian,end_geode), bots, refused) in states])
+    
+def solveDay19A():
+    lines = blueprintsText.split('\n')
+    lines = getInputSplit(19)
+    blueprints = []
+    for line in lines:
+        parsed = parse("Blueprint {num:d}: Each ore robot costs {ore_ore:d} ore. Each clay robot costs {clay_ore:d} ore. Each obsidian robot costs {obsidian_ore:d} ore and {obsidian_clay:d} clay. Each geode robot costs {geode_ore:d} ore and {geode_obsidian:d} obsidian.", line)
+        blueprints.append(Blueprint(parsed))
+    s=0
+    return sum([blueprint.num * blueprint.maxGeodes(24) for blueprint in blueprints])
+
+
+def solveDay19B():
+    lines = blueprintsText.split('\n')
+    lines = getInputSplit(19)
+    blueprints = []
+    for line in lines:
+        parsed = parse("Blueprint {num:d}: Each ore robot costs {ore_ore:d} ore. Each clay robot costs {clay_ore:d} ore. Each obsidian robot costs {obsidian_ore:d} ore and {obsidian_clay:d} clay. Each geode robot costs {geode_ore:d} ore and {geode_obsidian:d} obsidian.", line)
+        blueprints.append(Blueprint(parsed))
+    s=0
+    return blueprints[0].maxGeodes(32) * blueprints[1].maxGeodes(32) * blueprints[2].maxGeodes(32)
+
+
+# Day 20
+
+def getInRange(n, length):
+    k = n
+    if n < 0:  
+        k=((abs(n) // (length - 1) + 2) * (length-1)+n) % (length - 1)
+    elif n>=length:
+        k = (n-1) % (length -1) + 1
+    return k
+
+def simpleRange(a,b,length):
+    a,b=min(a,b),max(a,b)
+    r=[i for i in range(a,b)]
+    for i in range(len(r)): 
+        r[i]=getInRange(r[i], length)
+    return r
+
+def solveDay20A():
+    lines = getInputSplit(20)
+    file = []
+    length = len(lines)
+    order = [ i for i in range(len(lines))]
+    invOrder = [i for i in range(len(lines))]
+    pos0=0
+    for i in range(len(lines)):        
+        file.append(int(lines[i]))
+        if(file[i]==0):
+            pos0=i
+    for i in range(len(lines)):
+        pos = order[i]
+        move = file[i]
+        newPos = getInRange(pos + move, length)
+        v = (pos, newPos)
+        delta = 1 if newPos < pos else -1
+        for j in range(min(v), max(v) + 1):
+            if invOrder[j] != i:
+                order[invOrder[j]] +=delta
+        order[i] = newPos
+        
+        newInvOrder = invOrder + []
+        for j in range(min(v), max(v) + 1):
+            if newInvOrder[j] != i:
+                invOrder[order[newInvOrder[j]]] = newInvOrder[j]
+        invOrder[order[i]] = i
+            
+    encryptedFile = [file[invOrder[i]] for i in range(length)]
+    startPos = order[pos0]
+    return sum([encryptedFile[(startPos + 1000 * i) % length] for i in range(1,4)])
+
+def solveDay20B():
+    lines = getInputSplit(20)
+    file = []
+    length = len(lines)
+    order = [ i for i in range(len(lines))]
+    invOrder = [i for i in range(len(lines))]
+    pos0=0
+    for i in range(len(lines)):        
+        file.append(811589153 * int(lines[i]))
+        if(file[i]==0):
+            pos0=i
+    for t in range(10):
+        for i in range(len(lines)):
+            pos = order[i]
+            move = file[i]
+            newPos = getInRange(pos + move, length)
+            v = (pos, newPos)
+            delta = 1 if newPos < pos else -1
+            for j in range(min(v), max(v) + 1):
+                if invOrder[j] != i:
+                    order[invOrder[j]] +=delta
+            order[i] = newPos
+            
+            newInvOrder = invOrder + []
+            for j in range(min(v), max(v) + 1):
+                if newInvOrder[j] != i:
+                    invOrder[order[newInvOrder[j]]] = newInvOrder[j]
+            invOrder[order[i]] = i
+
+    encryptedFile = [file[invOrder[i]] for i in range(length)]
+    startPos = order[pos0]
+    return sum([encryptedFile[(startPos + 1000 * i) % length] for i in range(1,4)])
+
+
+#Day 21
+
+def addToDictList(dict, key, x):
+    if key in dict:
+        dict[key].append(x)
+    else:
+        dict[key]=[x]
+        
+def calc(m,n,op):
+    return (m + n) if op == '+' else (m-n) if op == '-' else (m*n) if op == '*' else m//n
+
+def solveDay21A():
+    values={}
+    clients = {}
+    lines = getInputSplit(21)
+    for line in lines:
+        s0=line.strip().split(':')
+        s = s0[1].strip().split(' ')
+        result = None
+        id=s0[0]
+        if len(s)>1:
+            m,n=None,None
+            op = s[1]
+            waiting = [s0[0]] + s
+            if s[0] in values:
+                m=values[s[0]]
+            else :
+                addToDictList(clients, s[0], waiting)
+            if s[2] in values:
+                n=values[s[2]]
+            else:
+                addToDictList(clients, s[2], waiting)
+            if m != None and n != None:
+                result = calc(m,n,op)
+        else:
+            result = int(s[0])
+            
+            
+        if result != None:
+            values[id]=result
+            lastMonkeys=[id]
+            while len(lastMonkeys)>0:
+                newMonkeys=[]
+                for monkey in lastMonkeys:
+                    if monkey in clients:
+                        for waiting in clients[monkey]:
+                            k1, k2= waiting[1], waiting[3]
+                            if k1 in values and k2 in values:
+                                v = calc(values[k1], values[k2], waiting[2])
+                                values[waiting[0]]=v
+                                newMonkeys.append(waiting[0])
+                lastMonkeys=newMonkeys + []
+                
+    return values['root']
+    
+def invOp(op):
+    return '+' if op == '-' else '-' if op =='+' else '/' if op == '*' else '*'
+
+
+def solveDay21B():
+    values={}
+    clients = {}
+    revClients ={}
+    lines = getInputSplit(21)
+    rootEquals =(None,None)
+    for line in lines:
+        s0=line.strip().split(':')
+        s = s0[1].strip().split(' ')
+        result = None
+        id=s0[0]
+        if id == 'humn':
+            continue
+        if id == 'root':
+            rootEquals=(s[0], s[2])
+        if len(s)>1:
+            m,n=None,None
+            op = s[1]
+            
+            waiting = [s0[0]] + s
+            wait1 = [s[0], id, invOp(op), s[2]]
+            wait2 = [s[2], id, invOp(op), s[0]] if op in ('+', '*') else [s[2], s[0], op, id]
+            if s[0] in values:
+                m=values[s[0]]
+            else :
+                addToDictList(clients, s[0], waiting)
+                addToDictList(revClients, s0[0], wait1)
+                addToDictList(revClients, s[2], wait1)
+            if s[2] in values:
+                n=values[s[2]]
+            else:
+                addToDictList(clients, s[2], waiting)
+                addToDictList(revClients, s0[0], wait2)
+                addToDictList(revClients, s[0], wait2)
+            if m != None and n != None:
+                result = calc(m,n,op)
+        else:
+            result = int(s[0])
+            
+        if result != None:
+            values[id]=result
+            lastMonkeys=[id]
+            while len(lastMonkeys)>0:
+                newMonkeys=[]
+                for monkey in lastMonkeys:
+                    if monkey in clients:
+                        for waiting in clients[monkey]:
+                            k1, k2= waiting[1], waiting[3]
+                            if k1 in values and k2 in values:
+                                v = calc(values[k1], values[k2], waiting[2])
+                                values[waiting[0]]=v
+                                newMonkeys.append(waiting[0])
+                lastMonkeys=newMonkeys + []
+    
+    lastMonkeys=[]
+    if rootEquals[0] in values:
+        values[rootEquals[1]] = values[rootEquals[0]]
+        lastMonkeys.append(rootEquals[1])
+    elif rootEquals[1] in values:
+        values[rootEquals[0]] = values[rootEquals[1]]
+        lastMonkeys.append(rootEquals[0])
+    
+    while len(lastMonkeys)>0:
+        newMonkeys=[]
+        for monkey in lastMonkeys:
+            if monkey in revClients:
+                for waiting in revClients[monkey]:
+                    if waiting[0] not in values:
+                        k1, k2= waiting[1], waiting[3]
+                        if k1 in values and k2 in values:
+                            v = calc(values[k1], values[k2], waiting[2])
+                            values[waiting[0]]=v
+                            newMonkeys.append(waiting[0])
+        lastMonkeys=newMonkeys + []
+        
+    return values['humn']
+
+
+#Day 22
+
+def solveDay22A():
+    lines = getInput(22).rstrip().split('\n')
+    
+    width = max([len(line) for line in lines[:len(lines)-2]])
+    for i in range(len(lines) - 2):
+        lines[i] = lines[i] + (width - len(lines[i])) * ' '
+    start = [0, min([i for i in range(len(lines[0]))  if lines[0][i] == '.'])]
+    dirs=[(0,1), (1,0), (0,-1), (-1,0)]
+    path = lines[len(lines)-1]
+    ranges = [int(r) for r in path.strip().replace('R','L').split('L')]
+    turns = [s for s in path if s in "RL"]
+    curDir=0
+    terrain = [[c for c in line] for line in lines[0:len(lines)-2]]
+    pos = start
+    for i in range(len(ranges)):
+        nextPos=pos+[]
+        dir = dirs[curDir]
+        for j in range(ranges[i]):
+            moved=False
+            while(not moved or terrain[nextPos[0]][nextPos[1]] == ' '):
+                moved = True
+                nextPos=[(nextPos[0] + dir[0] + len(terrain)) % len(terrain), (nextPos[1] + dir[1] + len(terrain[0]))  % len(terrain[0])]
+            if terrain[nextPos[0]][nextPos[1]] == '#':
+                break
+            else:
+                pos = nextPos+[]
+        if i < len(turns):
+            curDir = (curDir +( 1 if turns[i] == 'R' else -1)) % len(dirs)
+            lastDir = curDir
+    return (curDir) + 1000 * (pos[0] + 1) + 4 * (pos[1] +1)
+
+
+def getFace(vec):
+    face = 3 if vec[0]<0 else 6 if vec[0]>0 else 2 if vec[1]<0 else 4 if vec[1] > 0 else 5 if vec[2] > 0 else 1
+    return face-1
+
+def solveDay22B():
+    #1:facing, 2:top, 3:left, 4:bottom, 5:behind, 6:right
+    lines = getInput(22).rstrip().split('\n')
+    width = max([len(line) for line in lines[:len(lines)-2]])
+    area = 0
+    for i in range(len(lines) - 2):
+        lines[i] = lines[i] + (width - len(lines[i])) * ' '
+        area += len([c for c in lines[i] if c != ' '])
+    
+    side = int((area//6)**0.5)
+    start = [0, min([i for i in range(len(lines[0]))  if lines[0][i] == '.'])]
+    dirs=[(0,1), (1,0), (0,-1), (-1,0)]
+    dirsIndex = {(0,1): 0, (1,0):1, (0,-1):2, (-1,0):3}
+    path = lines[len(lines)-1]
+    ranges = [int(r) for r in path.strip().replace('R','L').split('L')]
+    turns = [s for s in path if s in "RL"]
+    curDir=0
+    terrain = [[c for c in line] for line in lines[0:len(lines)-2]]
+    pos = start
+    lastDir = curDir
+
+    oneMat = np.array([[1,0,0], [0,1,0],[0,0,1]])
+    upMat = np.array([[1,0,0], [0,0,-1],[0,1,0]])
+    downMat = np.array([[1,0,0], [0,0,1],[0,-1,0]])
+    leftMat = np.array([[0,0,-1], [0,1,0],[1,0,0]])
+    rightMat = np.array([[0,0,1], [0,1,0],[-1,0,0]])
+
+    faces = [(start[1] // side, start[0]//side)] + [None] * 5
+    matrixes = [oneMat] + [None] * 5
+    baseInvRotationMatrixes = [oneMat, downMat, rightMat, upMat, rightMat.dot(rightMat), leftMat]
+    newFaces = [0]
+    while(len(newFaces) > 0):
+        nextFaces = []
+        for faceIndex in newFaces:
+            left = np.array([-1,0,0]).dot(matrixes[faceIndex])
+            leftIndex = getFace(left)
+            if faces[leftIndex] == None:
+                x = (faces[faceIndex][0] - 1) * side
+                y = (faces[faceIndex][1]) * side
+                if 0<=x<len(terrain[0]) and terrain[y][x] in ".#":
+                    faces[leftIndex] = (x // side, y // side)
+                    matrixes[leftIndex] =leftMat.dot(matrixes[faceIndex])
+                    nextFaces.append(leftIndex)
+            
+            right = np.array([1,0,0]).dot(matrixes[faceIndex])
+            rightIndex = getFace(right)
+            if faces[rightIndex] == None:
+                x = (faces[faceIndex][0] + 1) * side
+                y = faces[faceIndex][1] * side
+                if 0<=x<len(terrain[0]) and terrain[y][x] in ".#":
+                    faces[rightIndex] = (x // side, y // side)
+                    matrixes[rightIndex] = rightMat.dot(matrixes[faceIndex])
+                    nextFaces.append(rightIndex)
+
+            up = np.array([0,-1,0]).dot(matrixes[faceIndex])
+            upIndex = getFace(up)
+            if faces[upIndex] == None:
+                x = (faces[faceIndex][0]) * side
+                y = (faces[faceIndex][1] - 1) * side
+                if 0<=y<len(terrain) and terrain[y][x] in ".#":
+                    faces[upIndex] = (x // side, y // side)
+                    matrixes[upIndex] = upMat.dot(matrixes[faceIndex])
+                    nextFaces.append(upIndex)
+
+            down = np.array([0,1,0]).dot(matrixes[faceIndex])
+            downIndex = getFace(down)
+            if faces[downIndex] == None:
+                x = (faces[faceIndex][0]) * side
+                y = (faces[faceIndex][1] + 1) * side
+                if 0<=y<len(terrain) and terrain[y][x] in ".#":
+                    faces[downIndex] = (x // side, y // side)
+                    matrixes[downIndex] = downMat.dot(matrixes[faceIndex])
+                    nextFaces.append(downIndex)
+                    
+        newFaces = nextFaces + []
+            
+    invMatrixes = []
+    for m in matrixes:
+        invMatrixes.append(inv(m))
+
+    #Path
+    for i in range(len(ranges)):
+        nextPos=pos+[]
+        for j in range(ranges[i]):
+            y,x = pos
+            currentFace=-99
+            for k in range(len(faces)):
+                if(faces[k] == (x//side,y//side)):
+                    currentFace=k
+            dir = dirs[curDir]
+            nextPos=[(pos[0] + dir[0]), (pos[1] + dir[1])]
+            
+            if nextPos[1] // side != x // side or nextPos[0] // side != y // side:
+                #Face change
+                centerSide = (side-1)/2
+                facePos = [[0,0,-1],[0,-1,0],[-1,0,0],[0,1,0],[0, 0, 1],[1,0,0]]
+                vec = np.array([dir[1], dir[0], 0]).dot(matrixes[currentFace])
+                newFace = getFace(vec)
+                centeredPos = np.array([x % side, y % side, 0]) - np.array([(side-1)/2, (side-1)/2, 0])
+                
+                currentFacePos = centeredPos.dot(matrixes[currentFace])  + centerSide * np.array(facePos[currentFace])
+                newFacePos = currentFacePos.dot(invMatrixes[newFace])
+                
+                dirToFace = -np.array(facePos[currentFace]).dot(invMatrixes[newFace])
+                
+                nextPos = [int(faces[newFace][1] * side + newFacePos[1] + (side-1)/2), int(faces[newFace][0] * side + newFacePos[0] + (side-1)/2) ]
+                curDir = dirsIndex[(dirToFace[1], dirToFace[0])]
+                
+            if terrain[nextPos[0]][nextPos[1]] == '#':
+                curDir = lastDir
+                break
+            else:
+                pos = nextPos+[]
+                lastDir =  curDir
+        if i < len(turns):
+            curDir = (lastDir +( 1 if turns[i] == 'R' else -1) + len(dirs)) % len(dirs)
+            lastDir = curDir
+            
+    return (lastDir) + 1000 * (pos[0] + 1) + 4 * (pos[1] +1)
+    
+    
+#Day 23
+
+def print_terrain(elves):
+    minX, maxX, minY, maxY = min([x for (x,y) in elves]), max([x for (x,y) in elves]), min([y for (x,y) in elves]), max([y for (x,y) in elves])
+    for y in range(minY, maxY+1):
+        s=""
+        for x in range(minX, maxX +1):
+            if (x,y) in elves:
+                s+="#"
+            else:
+                s+="."
+        print(s)
+    print('\n')
+
+def solveDay23A():
+    lines = getInputSplit(23)
+    terrain = [[c == '#' for c in line] for line in lines]
+    elves = [(x,y) for y in range(len(terrain)) for x in range(len(terrain[0])) if terrain[y][x]]
+    dirs = ( (0,-1),(0,1),(-1,0),(1,0))
+    curDirStart = 0
+    for turn in range(10):
+        claimedSpots = {}
+        for j in range(len(elves)):
+            elf = elves[j]
+            adjElf=False
+            for elf2 in elves:
+                if max(abs(elf[0]-elf2[0]), abs(elf[1] - elf2[1])) == 1:
+                    adjElf = True
+                    break
+                
+            if adjElf:
+                for i in list(range(curDirStart, len(dirs))) + list(range(0,curDirStart)):
+                    dir = dirs[i]
+                    spot = (elf[0] + dir[0], elf[1] + dir[1])
+                    if spot not in elves:
+                        if dir[0] == 0 and (elf[0] + 1, elf[1] + dir[1]) not in elves and (elf[0] - 1, elf[1] + dir[1]) not in elves or \
+                        dir[1] == 0 and (elf[0] + dir[0], elf[1] + 1) not in elves and (elf[0] + dir[0], elf[1] - 1) not in elves:
+                            if spot in claimedSpots:
+                                claimedSpots[spot] = None
+                            else:
+                                claimedSpots[spot] = j
+                            break
+                        
+        for spot in claimedSpots:
+            if claimedSpots[spot] != None:
+                elves[claimedSpots[spot]] = spot
+        curDirStart = (curDirStart + 1) % len(dirs)
+    minX, maxX, minY, maxY = min([x for (x,y) in elves]), max([x for (x,y) in elves]), min([y for (x,y) in elves]), max([y for (x,y) in elves])
+    return (maxX - minX + 1) * (maxY - minY + 1) - len(elves)
+        
+
+def solveDay23B():
+    lines = getInputSplit(23)
+    terrain = [[c == '#' for c in line] for line in lines]
+    elves = [(x,y) for y in range(len(terrain)) for x in range(len(terrain[0])) if terrain[y][x]]
+    dirs = ( (0,-1),(0,1),(-1,0),(1,0))
+    curDirStart = 0
+    turn = 0
+    while True:
+        turn +=1
+        claimedSpots = {}
+        for j in range(len(elves)):
+            elf = elves[j]
+            adjElf=False
+            for elf2 in elves:
+                if max(abs(elf[0]-elf2[0]), abs(elf[1] - elf2[1])) == 1:
+                    adjElf = True
+                    break
+            if adjElf:
+                for i in list(range(curDirStart, len(dirs))) + list(range(0,curDirStart)):
+                    dir = dirs[i]
+                    spot = (elf[0] + dir[0], elf[1] + dir[1])
+                    if spot not in elves:
+                        if dir[0] == 0 and (elf[0] + 1, elf[1] + dir[1]) not in elves and (elf[0] - 1, elf[1] + dir[1]) not in elves or \
+                        dir[1] == 0 and (elf[0] + dir[0], elf[1] + 1) not in elves and (elf[0] + dir[0], elf[1] - 1) not in elves:
+                            if spot in claimedSpots:
+                                claimedSpots[spot] = None
+                            else:
+                                claimedSpots[spot] = j
+                            break
+        moved = False 
+        for spot in claimedSpots:
+            if claimedSpots[spot] != None:
+                elves[claimedSpots[spot]] = spot
+                moved = True
+        if not moved:
+            return turn
+            
+        curDirStart = (curDirStart + 1) % len(dirs)
+
+
+# Day 24
+
+def solveDay24A():
+    lines = getInputSplit(24)
+    terrain = [[c for c in line] for line in lines]
+    start = (0,0)
+    end = (len(terrain)-1, 0)
+    for i in range(len(terrain[0])):
+        if terrain[0][i] == '.':
+            start = (0, i)
+        if terrain[len(terrain)-1][i]=='.':
+            end = (len(terrain) - 1, i)
+    blizzards = []
+    blizzardsDirs = []
+    for i in range(len(terrain)):
+        for j in range(len(terrain[i])):
+            c = terrain[i][j]
+            if c in "v^<>":
+                delta = (1,0) if c == 'v' else (-1,0) if c == '^' else (0,-1) if c == '<' else (0,1)
+                blizzards.append([i,j])
+                blizzardsDirs.append(delta)
+    pos = (start[0], start[1])
+    turns = 0
+    possiblePos = [pos]
+    while len(possiblePos)>0:
+        
+        turns +=1
+        for i in range(len(blizzards)):
+            moved=False
+            while not (moved and 0 <= blizzards[i][0] < len(terrain) and 0<=blizzards[i][1] < len(terrain[0]) and terrain[blizzards[i][0]][blizzards[i][1]] != '#'):
+                blizzards[i] = [(blizzards[i][0] + len(terrain) + blizzardsDirs[i][0]) % len(terrain), (blizzards[i][1] + blizzardsDirs[i][1] + len(terrain[0])) % len(terrain[0])]
+                moved=True
+        newPossiblePos =[]
+        for p in possiblePos:
+            newPossiblePos += [newPos for newPos in (p, (p[0] + 1, p[1]), (p[0] - 1, p[1]),(p[0], p[1] - 1),(p[0], p[1] + 1)) if newPos[0]>=0 and newPos[0] < len(terrain) and newPos[1]>=0 and newPos[1]<len(terrain[0]) and terrain[newPos[0]][newPos[1]] != '#' and not list(newPos) in blizzards]
+        if end in newPossiblePos:
+            return turns
+        else:
+            possiblePos = list(dict.fromkeys(newPossiblePos))
+
+
+def solveDay24B():
+    lines = getInputSplit(24)
+    terrain = [[c for c in line] for line in lines]
+    start = (0,0)
+    end = (len(terrain)-1, 0)
+    for i in range(len(terrain[0])):
+        if terrain[0][i] == '.':
+            start = (0, i)
+        if terrain[len(terrain)-1][i]=='.':
+            end = (len(terrain) - 1, i)
+    blizzards = []
+    blizzardsDirs = []
+    for i in range(len(terrain)):
+        for j in range(len(terrain[i])):
+            c = terrain[i][j]
+            if c in "v^<>":
+                delta = (1,0) if c == 'v' else (-1,0) if c == '^' else (0,-1) if c == '<' else (0,1)
+                blizzards.append([i,j])
+                blizzardsDirs.append(delta)
+    pos = (start[0], start[1])
+    turns = 0
+    possiblePos = [pos]
+    steps = (end, start, end)
+    stepIndex = 0
+    while len(possiblePos)>0:
+        turns +=1
+        for i in range(len(blizzards)):
+            moved=False
+            while not (moved and 0 <= blizzards[i][0] < len(terrain) and 0<=blizzards[i][1] < len(terrain[0]) and terrain[blizzards[i][0]][blizzards[i][1]] != '#'):
+                blizzards[i] = [(blizzards[i][0] + len(terrain) + blizzardsDirs[i][0]) % len(terrain), (blizzards[i][1] + blizzardsDirs[i][1] + len(terrain[0])) % len(terrain[0])]
+                moved=True
+        newPossiblePos =[]
+        for p in possiblePos:
+            newPossiblePos += [newPos for newPos in (p, (p[0] + 1, p[1]), (p[0] - 1, p[1]),(p[0], p[1] - 1),(p[0], p[1] + 1)) if newPos[0]>=0 and newPos[0] < len(terrain) and newPos[1]>=0 and newPos[1]<len(terrain[0]) and terrain[newPos[0]][newPos[1]] != '#' and not list(newPos) in blizzards]
+        if steps[stepIndex] in newPossiblePos:
+            stepIndex+=1
+            if stepIndex>=len(steps):
+                return turns
+            
+            possiblePos = [steps[stepIndex - 1]]
+        else:
+            possiblePos = list(dict.fromkeys(newPossiblePos))
+
+
+#Day 25
+
+def snafuToDecimal(s):
+    decs = {'=':-2, '-':-1,'0':0, '1':1, '2':2}
+    num=0
+    for i in range(len(s[::-1])):
+        num += decs[s[i]] * 5 ** (len(s)- 1 - i)
+    return num
+        
+def decimalToSnafu(n):
+    decs = ['0', '1', '2', '=', '-']
+    powerMax = 0
+    s=""
+    m = n
+    while(5 ** powerMax < n):
+        powerMax+=1
+    powerMax+=1
+    for i in range(powerMax):
+        k = m % (5 ** (i + 1)) // (5**i)
+        if k >=3:
+            m += 5 ** (i + 1)
+        s = decs[k] + s
+    if(s[0] == '0'):
+        s=s[1:]
+    return s
+
+
+def solveDay25():
+    inputs = getInputSplit(25)
+    totalFuel=0
+    for s in inputs:
+        totalFuel += snafuToDecimal(s)
+    totalFuelSnafu = decimalToSnafu(totalFuel)
+    return totalFuelSnafu
+
+
+
 print("1A:", solveDay1A())
 print("1B:", solveDay1B())
 print("2A:", solveDay2A())
@@ -1128,3 +1808,16 @@ print("17A:", solveDay17A())
 print("17B:", solveDay17B())
 print("18A:", solveDay18A())
 print("18B:", solveDay18B())
+print("19A:", solveDay19A())
+print("19B:", solveDay19B())
+print("20A:", solveDay20A())
+print("20B:", solveDay20B())
+print("21A:", solveDay21A())
+print("21B:", solveDay21B())
+print('22A:', solveDay22A())
+print('22B:', solveDay22B())
+print('23A:', solveDay23A())
+#print('23B:', solveDay23B()) #Warning: extremely slow
+print('24A:', solveDay24A())
+print('24B:', solveDay24B())
+print('25:', solveDay25())
