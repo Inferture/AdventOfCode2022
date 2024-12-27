@@ -1321,7 +1321,6 @@ def solveDay21A():
 def invOp(op):
     return '+' if op == '-' else '-' if op =='+' else '/' if op == '*' else '*'
 
-
 def solveDay21B():
     values={}
     clients = {}
